@@ -4,5 +4,6 @@ message: "If you use this work, please cite it as below."
 authors:
   - family-names: "Marnov"
     given-names: "Maksym"
+    orcid: "https://orcid.org/0009-0000-0832-9597"
 year: 2026
 version: "1.0.2"
