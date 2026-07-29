@@ -618,6 +618,38 @@ Operational interpretation:
 - this supports formal structural existence at scale;
 - real dynamic stability still requires `C(t) > P(t)`.
 
+## EDC Critical Ramp Scaling
+
+Near the EDS–EDC boundary, the reduced scalar critical dynamics may be written as:
+
+`dC/dt = v_eff t C − C³`
+
+Introduce the canonical variables:
+
+`C = v_eff^(1/4) y`
+
+`t = v_eff^(−1/2) τ`
+
+The reduced equation becomes:
+
+`dy/dτ = τ y − y³`
+
+Therefore:
+
+`C_critical ~ v_eff^(1/4)`
+
+`t_critical ~ v_eff^(−1/2)`
+
+`t_delay ~ v_eff^(−1/2)`
+
+The delay relation is the characteristic deterministic critical ramp scale of this reduced normal form. A measured or simulated transition delay may additionally depend on initial conditions, perturbation amplitude, noise, and the operational transition threshold.
+
+For the adopted three-dimensional EDS interpretation, when `C` is treated as a characteristic linear coherence amplitude, the corresponding coherent volume obeys:
+
+`V_coh ∝ C³`
+
+This gives the cubic saturation term a volumetric interpretation. Spatial dimensionality alone does not determine the normal-form exponent; the interpretation must remain consistent with the definition of `C` and with the adopted scalar amplitude truncation.
+
 # 11. Local Quasi-Linear Stability Approximation
 
 Near a local operational regime:

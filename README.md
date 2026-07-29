@@ -405,58 +405,55 @@ v_eff t C — drift-driven growth of endogenous structural coherence near the cr
 
 −C³ — nonlinear saturation term of endogenous structural coherence growth.
 
-The characteristic critical delay follows:
+The reduced critical equation has the canonical ramp scaling:
 
-t_delay ~ v_eff^(−1/3)
+C = v_eff^(1/4) y
 
-This scaling law describes how available stabilization time compresses as endogenous drift accelerates.
+t = v_eff^(−1/2) τ
 
-## Why the Scaling Is Cubic
-
-The exponent:
-
-−1/3
-
-is not introduced as an arbitrary scaling coefficient.
-
-It follows from the cubic nonlinear saturation term:
-
-−C³
-
-in the reduced critical form:
+which transforms:
 
 dC/dt = v_eff t C − C³
 
-The cubic term is used because retained structural stability is not treated as a one-dimensional or purely quadratic correction.
+into the parameter-free form:
 
-A retained structure must preserve organization as a volumetric dynamic condition.
+dy/dτ = τ y − y³
 
-A quadratic correction would describe pairwise or surface-like limitation.
+Therefore, the characteristic amplitude and critical time scales are:
 
-The cubic term represents third-order saturation of the retained regime, where coherence growth is constrained by volumetric stabilization, internal compatibility, nonlinear self-interaction, and the three-dimensional structural character of retained organization.
+C_critical ~ v_eff^(1/4)
 
-Therefore, the reduced critical form uses:
+t_critical ~ v_eff^(−1/2)
+
+and the characteristic critical-delay scale is:
+
+t_delay ~ v_eff^(−1/2)
+
+This means that the available critical-response time compresses as endogenous drift accelerates. The scaling is a deterministic critical ramp scale of the reduced normal form; an observed transition delay may also depend on the initial coherence amplitude, perturbations, noise, and the operational threshold used to identify transition.
+
+## Cubic Saturation and Three-Dimensional Interpretation
+
+The term:
 
 −C³
 
-rather than:
+is the nonlinear saturation term in the adopted scalar critical normal form.
 
-−C²
+Within the EDS interpretation, C may be read as a characteristic linear coherence amplitude of an endogenous structure embedded in three-dimensional space. Under that interpretation, the associated coherent volume scales as:
 
-As a result:
+V_coh ∝ C³
 
-t_delay ~ v_eff^(−1/3)
+so the cubic saturation term has a volumetric interpretation: increasing coherence is constrained by three-dimensional retained organization, internal compatibility, and nonlinear self-interaction.
 
-follows from the cubic saturation structure of the reduced EDC regime.
+The three-dimensional interpretation supports the physical meaning assigned to the cubic term, but spatial dimensionality alone does not derive the normal-form exponent. The cubic term is also the lowest-order nonlinear saturation retained in the adopted scalar amplitude model. Consequently, the volumetric interpretation and the normal-form truncation must be stated together.
 
 Operationally:
 
 - linear endogenous drift moves the system toward the critical boundary;
 - cubic saturation limits the growth of endogenous structural coherence;
-- retained three-dimensional structural organization requires third-order nonlinear stabilization;
-- faster endogenous drift compresses available stabilization time.
-
-Thus, the exponent −1/3 follows from the cubic nonlinear saturation term and is not an external assumption.
+- the adopted three-dimensional interpretation assigns V_coh ∝ C³ to the coherent structure;
+- the resulting critical ramp scale is t_delay ~ v_eff^(−1/2);
+- faster endogenous drift compresses the characteristic critical-response time.
 
 ## Scope
 
