@@ -650,6 +650,101 @@ For the adopted three-dimensional EDS interpretation, when `C` is treated as a c
 
 This gives the cubic saturation term a volumetric interpretation. Spatial dimensionality alone does not determine the normal-form exponent; the interpretation must remain consistent with the definition of `C` and with the adopted scalar amplitude truncation.
 
+## Generalized Ramp-Scaling Lemma
+
+For the generalized reduced critical equation:
+
+`dC/dt = v_eff t C − g C^n`
+
+with:
+
+`g > 0`, `n > 1`, `v_eff > 0`,
+
+set:
+
+`t = v_eff^(−1/2) τ`
+
+`C = g^(−1/(n−1)) v_eff^(1/(2(n−1))) y`
+
+The exponent balance is:
+
+`β + α = 1 − α + β = nβ`
+
+where:
+
+`t = v_eff^(−α) τ`
+
+`C = g^(−1/(n−1)) v_eff^β y`
+
+Hence:
+
+`α = 1/2`
+
+`β = 1/(2(n−1))`
+
+and the dimensionless equation is:
+
+`dy/dτ = τ y − y^n`
+
+Therefore:
+
+`t_critical ~ v_eff^(−1/2)`
+
+`t_delay ~ v_eff^(−1/2)`
+
+`C_critical ~ g^(−1/(n−1)) v_eff^(1/(2(n−1)))`
+
+The critical-time exponent is invariant under the saturation order n. The critical-amplitude exponent is not.
+
+| n | β | α |
+|---:|---:|---:|
+| 2 | 1/2 | 1/2 |
+| 3 | 1/4 | 1/2 |
+| 4 | 1/6 | 1/2 |
+| 5 | 1/8 | 1/2 |
+
+## Geometric Dimensional Closure
+
+For a coherent structure with intrinsic dimension d:
+
+`V_coh,d ∝ ∏_(i=1)^d C_i`
+
+Under isotropy:
+
+`C_i ~ C`
+
+so:
+
+`V_coh,d ∝ C^d`
+
+If coherent d-dimensional measure supplies the nonlinear saturation closure, then:
+
+`n = d`
+
+and, for `d > 1`:
+
+`C_critical ~ g^(−1/(d−1)) v_eff^(1/(2(d−1)))`
+
+`t_delay ~ v_eff^(−1/2)`
+
+For the three-dimensional EDS realization:
+
+`V_coh,3 ∝ C_x C_y C_z`
+
+with the isotropic reduction:
+
+`C_x ~ C_y ~ C_z ~ C`
+
+therefore:
+
+`V_coh,3 ∝ C³`
+
+`C_critical ~ g^(−1/2) v_eff^(1/4)`
+
+`t_delay ~ v_eff^(−1/2)`
+
+The geometric closure predicts a dimension-sensitive amplitude exponent. The independent symmetry closure `C → −C` predicts the absence of even powers in a sign-symmetric scalar amplitude equation. Both support cubic saturation in the present three-dimensional EDS reduction, while neither alters the generalized temporal exponent as long as the ramp term remains `v_eff t C`.
+
 # 11. Local Quasi-Linear Stability Approximation
 
 Near a local operational regime:

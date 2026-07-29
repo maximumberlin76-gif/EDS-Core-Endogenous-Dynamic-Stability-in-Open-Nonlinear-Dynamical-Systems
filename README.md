@@ -455,6 +455,110 @@ Operationally:
 - the resulting critical ramp scale is t_delay ~ v_eff^(−1/2);
 - faster endogenous drift compresses the characteristic critical-response time.
 
+## Generalized Ramp-Scaling Lemma
+
+Consider the generalized reduced critical equation:
+
+dC/dt = v_eff t C − g C^n
+
+with:
+
+- g > 0;
+- n > 1;
+- v_eff > 0.
+
+Introduce the scaling:
+
+t = v_eff^(−1/2) τ
+
+C = g^(−1/(n−1)) v_eff^(1/(2(n−1))) y
+
+Then all three terms acquire the same factor and the equation becomes:
+
+dy/dτ = τ y − y^n
+
+Therefore:
+
+t_critical ~ v_eff^(−1/2)
+
+t_delay ~ v_eff^(−1/2)
+
+for every admissible saturation order n > 1, while the amplitude scale is:
+
+C_critical ~ g^(−1/(n−1)) v_eff^(1/(2(n−1)))
+
+The temporal exponent −1/2 is independent of the nonlinear saturation order. It is fixed by the balance between the time derivative and the linearly ramped critical term v_eff t C. Changing the origin or order of nonlinear saturation changes the critical-amplitude exponent, but it does not change the characteristic critical-time exponent.
+
+| Saturation order n | Amplitude exponent in v_eff | Time exponent in v_eff |
+|---:|---:|---:|
+| 2 | 1/2 | −1/2 |
+| 3 | 1/4 | −1/2 |
+| 4 | 1/6 | −1/2 |
+| 5 | 1/8 | −1/2 |
+
+This robustness separates two questions:
+
+1. what physical or structural mechanism determines the saturation order n;
+2. what scaling law determines the available critical-response time.
+
+The first question controls the amplitude exponent. The second retains the exponent −1/2 throughout this generalized class.
+
+## Geometric Dimensional Closure
+
+Let a coherent endogenous structure have d independent characteristic linear extents:
+
+C_1, C_2, ..., C_d.
+
+Its coherent d-dimensional measure scales as:
+
+V_coh,d ∝ ∏_(i=1)^d C_i
+
+Under an isotropic scalar reduction:
+
+C_1 ~ C_2 ~ ... ~ C_d ~ C
+
+and therefore:
+
+V_coh,d ∝ C^d
+
+This is the same geometric construction used for a correlation measure ξ^d in d dimensions. If nonlinear saturation is closed by this coherent d-dimensional measure, the geometric hypothesis is:
+
+n = d
+
+For d > 1, the generalized amplitude scaling becomes:
+
+C_critical ~ g^(−1/(d−1)) v_eff^(1/(2(d−1)))
+
+while:
+
+t_delay ~ v_eff^(−1/2)
+
+remains dimension-independent within the reduced ramp equation.
+
+For the full-volume three-dimensional EDS realization:
+
+d = 3
+
+V_coh,3 ∝ C_x C_y C_z
+
+and, under isotropy:
+
+C_x ~ C_y ~ C_z ~ C
+
+so:
+
+V_coh,3 ∝ C³
+
+which gives:
+
+C_critical ~ g^(−1/2) v_eff^(1/4)
+
+t_delay ~ v_eff^(−1/2)
+
+The geometric closure and the symmetry closure are distinct, testable modeling hypotheses. Geometric closure predicts that the effective saturation order follows the intrinsic dimension of the coherent structure. The symmetry argument C → −C independently excludes even powers in a sign-symmetric scalar amplitude equation and selects the cubic term as the leading nonlinear saturation. In the three-dimensional EDS case both routes support C³, but the invariance of the delay exponent does not depend on which route is used.
+
+A comparison across effective-dimensional realizations can test the geometric component: a change in saturation order should change the amplitude exponent according to 1/(2(n−1)), while the temporal exponent should remain −1/2 as long as the ramp term retains the form v_eff t C.
+
 ## Scope
 
 The theorem applies to open nonlinear dynamical systems, including:
