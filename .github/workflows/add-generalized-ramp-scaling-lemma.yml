@@ -1,0 +1,451 @@
+name: Add Generalized Ramp-Scaling Lemma
+
+"on":
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: add-generalized-ramp-scaling-lemma
+  cancel-in-progress: false
+
+jobs:
+  add-lemma:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Verify exact source state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYCODE'
+          from hashlib import sha256
+          from pathlib import Path
+
+          expected = {
+              "README.md": "add3c825fa45cce4c133e7a085e47681c061d82516236164e267a116977777c6",
+              "formulas.md": "0038829835f8dd764866bd6b7c91700214440e4524dc38220bda9cfa058aac2c",
+          }
+
+          for relative, wanted in expected.items():
+              path = Path(relative)
+              if not path.is_file():
+                  raise SystemExit(f"Missing source file: {relative}")
+              actual = sha256(path.read_bytes()).hexdigest()
+              if actual != wanted:
+                  raise SystemExit(
+                      f"Source hash mismatch for {relative}\n"
+                      f"expected: {wanted}\n"
+                      f"actual:   {actual}"
+                  )
+
+          readme = Path("README.md").read_text(encoding="utf-8")
+          formulas = Path("formulas.md").read_text(encoding="utf-8")
+
+          required_readme = {
+              "## EDC Scaling Extension": 1,
+              "dC/dt = v_eff t C − C³": 2,
+              "C_critical ~ v_eff^(1/4)": 1,
+              "t_delay ~ v_eff^(−1/2)": 2,
+              "## Cubic Saturation and Three-Dimensional Interpretation": 1,
+              "V_coh ∝ C³": 2,
+              "## Scope": 1,
+          }
+
+          required_formulas = [
+              "## EDC Critical Ramp Scaling",
+              "`dC/dt = v_eff t C − C³`",
+              "`C_critical ~ v_eff^(1/4)`",
+              "`t_delay ~ v_eff^(−1/2)`",
+              "`V_coh ∝ C³`",
+              "# 11. Local Quasi-Linear Stability Approximation",
+          ]
+
+          for marker, expected_count in required_readme.items():
+              actual_count = readme.count(marker)
+              if actual_count != expected_count:
+                  raise SystemExit(
+                      f"README marker count mismatch: {marker}; "
+                      f"expected {expected_count}, found {actual_count}"
+                  )
+
+          for marker in required_formulas:
+              if formulas.count(marker) != 1:
+                  raise SystemExit(f"formulas.md marker must occur exactly once: {marker}")
+
+          for marker in [
+              "## Generalized Ramp-Scaling Lemma",
+              "## Geometric Dimensional Closure",
+              "t_delay ~ v_eff^(−1/3)",
+              "t_delay ~ v_eff^(-1/3)",
+          ]:
+              if marker in readme or marker in formulas:
+                  raise SystemExit(f"Unexpected pre-existing or obsolete marker: {marker}")
+
+          print("Exact source state verified.")
+          PYCODE
+
+      - name: Add generalized scaling lemma
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYCODE'
+          from pathlib import Path
+
+          readme_path = Path("README.md")
+          formulas_path = Path("formulas.md")
+          readme = readme_path.read_text(encoding="utf-8")
+          formulas = formulas_path.read_text(encoding="utf-8")
+
+          readme_anchor = "## Scope\n"
+          formulas_anchor = "# 11. Local Quasi-Linear Stability Approximation\n"
+
+          if readme.count(readme_anchor) != 1:
+              raise SystemExit("README insertion anchor is not unique")
+          if formulas.count(formulas_anchor) != 1:
+              raise SystemExit("formulas.md insertion anchor is not unique")
+
+          readme_block = r'''## Generalized Ramp-Scaling Lemma
+
+          Consider the generalized reduced critical equation:
+
+          dC/dt = v_eff t C − g C^n
+
+          with:
+
+          - g > 0;
+          - n > 1;
+          - v_eff > 0.
+
+          Introduce the scaling:
+
+          t = v_eff^(−1/2) τ
+
+          C = g^(−1/(n−1)) v_eff^(1/(2(n−1))) y
+
+          Then all three terms acquire the same factor and the equation becomes:
+
+          dy/dτ = τ y − y^n
+
+          Therefore:
+
+          t_critical ~ v_eff^(−1/2)
+
+          t_delay ~ v_eff^(−1/2)
+
+          for every admissible saturation order n > 1, while the amplitude scale is:
+
+          C_critical ~ g^(−1/(n−1)) v_eff^(1/(2(n−1)))
+
+          The temporal exponent −1/2 is independent of the nonlinear saturation order. It is fixed by the balance between the time derivative and the linearly ramped critical term v_eff t C. Changing the origin or order of nonlinear saturation changes the critical-amplitude exponent, but it does not change the characteristic critical-time exponent.
+
+          | Saturation order n | Amplitude exponent in v_eff | Time exponent in v_eff |
+          |---:|---:|---:|
+          | 2 | 1/2 | −1/2 |
+          | 3 | 1/4 | −1/2 |
+          | 4 | 1/6 | −1/2 |
+          | 5 | 1/8 | −1/2 |
+
+          This robustness separates two questions:
+
+          1. what physical or structural mechanism determines the saturation order n;
+          2. what scaling law determines the available critical-response time.
+
+          The first question controls the amplitude exponent. The second retains the exponent −1/2 throughout this generalized class.
+
+          ## Geometric Dimensional Closure
+
+          Let a coherent endogenous structure have d independent characteristic linear extents:
+
+          C_1, C_2, ..., C_d.
+
+          Its coherent d-dimensional measure scales as:
+
+          V_coh,d ∝ ∏_(i=1)^d C_i
+
+          Under an isotropic scalar reduction:
+
+          C_1 ~ C_2 ~ ... ~ C_d ~ C
+
+          and therefore:
+
+          V_coh,d ∝ C^d
+
+          This is the same geometric construction used for a correlation measure ξ^d in d dimensions. If nonlinear saturation is closed by this coherent d-dimensional measure, the geometric hypothesis is:
+
+          n = d
+
+          For d > 1, the generalized amplitude scaling becomes:
+
+          C_critical ~ g^(−1/(d−1)) v_eff^(1/(2(d−1)))
+
+          while:
+
+          t_delay ~ v_eff^(−1/2)
+
+          remains dimension-independent within the reduced ramp equation.
+
+          For the full-volume three-dimensional EDS realization:
+
+          d = 3
+
+          V_coh,3 ∝ C_x C_y C_z
+
+          and, under isotropy:
+
+          C_x ~ C_y ~ C_z ~ C
+
+          so:
+
+          V_coh,3 ∝ C³
+
+          which gives:
+
+          C_critical ~ g^(−1/2) v_eff^(1/4)
+
+          t_delay ~ v_eff^(−1/2)
+
+          The geometric closure and the symmetry closure are distinct, testable modeling hypotheses. Geometric closure predicts that the effective saturation order follows the intrinsic dimension of the coherent structure. The symmetry argument C → −C independently excludes even powers in a sign-symmetric scalar amplitude equation and selects the cubic term as the leading nonlinear saturation. In the three-dimensional EDS case both routes support C³, but the invariance of the delay exponent does not depend on which route is used.
+
+          A comparison across effective-dimensional realizations can test the geometric component: a change in saturation order should change the amplitude exponent according to 1/(2(n−1)), while the temporal exponent should remain −1/2 as long as the ramp term retains the form v_eff t C.
+
+          '''
+
+          formulas_block = r'''## Generalized Ramp-Scaling Lemma
+
+          For the generalized reduced critical equation:
+
+          `dC/dt = v_eff t C − g C^n`
+
+          with:
+
+          `g > 0`, `n > 1`, `v_eff > 0`,
+
+          set:
+
+          `t = v_eff^(−1/2) τ`
+
+          `C = g^(−1/(n−1)) v_eff^(1/(2(n−1))) y`
+
+          The exponent balance is:
+
+          `β + α = 1 − α + β = nβ`
+
+          where:
+
+          `t = v_eff^(−α) τ`
+
+          `C = g^(−1/(n−1)) v_eff^β y`
+
+          Hence:
+
+          `α = 1/2`
+
+          `β = 1/(2(n−1))`
+
+          and the dimensionless equation is:
+
+          `dy/dτ = τ y − y^n`
+
+          Therefore:
+
+          `t_critical ~ v_eff^(−1/2)`
+
+          `t_delay ~ v_eff^(−1/2)`
+
+          `C_critical ~ g^(−1/(n−1)) v_eff^(1/(2(n−1)))`
+
+          The critical-time exponent is invariant under the saturation order n. The critical-amplitude exponent is not.
+
+          | n | β | α |
+          |---:|---:|---:|
+          | 2 | 1/2 | 1/2 |
+          | 3 | 1/4 | 1/2 |
+          | 4 | 1/6 | 1/2 |
+          | 5 | 1/8 | 1/2 |
+
+          ## Geometric Dimensional Closure
+
+          For a coherent structure with intrinsic dimension d:
+
+          `V_coh,d ∝ ∏_(i=1)^d C_i`
+
+          Under isotropy:
+
+          `C_i ~ C`
+
+          so:
+
+          `V_coh,d ∝ C^d`
+
+          If coherent d-dimensional measure supplies the nonlinear saturation closure, then:
+
+          `n = d`
+
+          and, for `d > 1`:
+
+          `C_critical ~ g^(−1/(d−1)) v_eff^(1/(2(d−1)))`
+
+          `t_delay ~ v_eff^(−1/2)`
+
+          For the three-dimensional EDS realization:
+
+          `V_coh,3 ∝ C_x C_y C_z`
+
+          with the isotropic reduction:
+
+          `C_x ~ C_y ~ C_z ~ C`
+
+          therefore:
+
+          `V_coh,3 ∝ C³`
+
+          `C_critical ~ g^(−1/2) v_eff^(1/4)`
+
+          `t_delay ~ v_eff^(−1/2)`
+
+          The geometric closure predicts a dimension-sensitive amplitude exponent. The independent symmetry closure `C → −C` predicts the absence of even powers in a sign-symmetric scalar amplitude equation. Both support cubic saturation in the present three-dimensional EDS reduction, while neither alters the generalized temporal exponent as long as the ramp term remains `v_eff t C`.
+
+          '''
+
+          readme = readme.replace(readme_anchor, readme_block + readme_anchor, 1)
+          formulas = formulas.replace(formulas_anchor, formulas_block + formulas_anchor, 1)
+
+          readme_path.write_text(readme.rstrip() + "\n", encoding="utf-8", newline="\n")
+          formulas_path.write_text(formulas.rstrip() + "\n", encoding="utf-8", newline="\n")
+
+          print("Generalized ramp-scaling lemma added.")
+          PYCODE
+
+      - name: Verify generalized derivation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PYCODE'
+          from fractions import Fraction
+          from pathlib import Path
+
+          for n in range(2, 11):
+              alpha = Fraction(1, 2)
+              beta = Fraction(1, 2 * (n - 1))
+              derivative = beta + alpha
+              ramp = 1 - alpha + beta
+              saturation = n * beta
+              if not derivative == ramp == saturation:
+                  raise SystemExit(
+                      f"Exponent balance failed for n={n}: "
+                      f"{derivative}, {ramp}, {saturation}"
+                  )
+
+          readme = Path("README.md").read_text(encoding="utf-8")
+          formulas = Path("formulas.md").read_text(encoding="utf-8")
+
+          required_readme = [
+              "## Generalized Ramp-Scaling Lemma",
+              "dC/dt = v_eff t C − g C^n",
+              "C = g^(−1/(n−1)) v_eff^(1/(2(n−1))) y",
+              "C_critical ~ g^(−1/(n−1)) v_eff^(1/(2(n−1)))",
+              "## Geometric Dimensional Closure",
+              "V_coh,d ∝ C^d",
+              "n = d",
+              "V_coh,3 ∝ C_x C_y C_z",
+              "C_critical ~ g^(−1/2) v_eff^(1/4)",
+              "The geometric closure and the symmetry closure are distinct, testable modeling hypotheses.",
+          ]
+
+          required_formulas = [
+              "## Generalized Ramp-Scaling Lemma",
+              "`dC/dt = v_eff t C − g C^n`",
+              "`α = 1/2`",
+              "`β = 1/(2(n−1))`",
+              "`C_critical ~ g^(−1/(n−1)) v_eff^(1/(2(n−1)))`",
+              "## Geometric Dimensional Closure",
+              "`V_coh,d ∝ C^d`",
+              "`n = d`",
+              "`V_coh,3 ∝ C_x C_y C_z`",
+          ]
+
+          for marker in required_readme:
+              if marker not in readme:
+                  raise SystemExit(f"README marker missing: {marker}")
+
+          for marker in required_formulas:
+              if marker not in formulas:
+                  raise SystemExit(f"formulas.md marker missing: {marker}")
+
+          if readme.count("## Generalized Ramp-Scaling Lemma") != 1:
+              raise SystemExit("README lemma count is not exactly one")
+          if formulas.count("## Generalized Ramp-Scaling Lemma") != 1:
+              raise SystemExit("formulas.md lemma count is not exactly one")
+
+          for path in Path(".").rglob("*"):
+              if (
+                  path.is_file()
+                  and ".git" not in path.parts
+                  and ".github" not in path.parts
+                  and path.suffix.lower() in {".md", ".txt", ".cff"}
+              ):
+                  text = path.read_text(encoding="utf-8")
+                  for marker in [
+                      "t_delay ~ v_eff^(−1/3)",
+                      "t_delay ~ v_eff^(-1/3)",
+                      "the exponent −1/3",
+                  ]:
+                      if marker in text:
+                          raise SystemExit(
+                              f"Obsolete delay scaling remains in {path}: {marker}"
+                          )
+
+          print("Generalized derivation and documentation verified.")
+          PYCODE
+
+      - name: Remove completed one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/add-generalized-ramp-scaling-lemma.yml
+
+      - name: Verify exact changed-file boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          printf '%s\n' \
+            '.github/workflows/add-generalized-ramp-scaling-lemma.yml' \
+            'README.md' \
+            'formulas.md' \
+            | sort > /tmp/expected-files.txt
+
+          git status --porcelain=v1 \
+            | cut -c4- \
+            | sort > /tmp/actual-files.txt
+
+          diff -u /tmp/expected-files.txt /tmp/actual-files.txt
+          git diff --check
+
+          echo "Exact changed-file boundary verified."
+
+      - name: Commit generalized lemma
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No generalized-lemma changes were staged."
+            exit 1
+          fi
+
+          git commit -m "Add generalized ramp-scaling lemma"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
