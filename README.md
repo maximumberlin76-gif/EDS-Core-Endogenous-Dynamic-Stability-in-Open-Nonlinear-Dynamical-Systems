@@ -591,7 +591,7 @@ do not predict an isolated outcome, but track the regime of the system.
 
 ## Status
 
-CORE v1.4-draft
+CORE v1.6.0
 
 ## Author
 
