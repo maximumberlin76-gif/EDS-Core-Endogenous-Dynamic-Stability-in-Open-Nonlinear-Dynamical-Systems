@@ -1,0 +1,424 @@
+name: Synchronize EDS Core v1.6.0 Metadata
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: synchronize-eds-core-v1-6-0-metadata-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synchronize-release-metadata:
+    name: Synchronize README and citation metadata
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      WORKFLOW_PATH: .github/workflows/synchronize-eds-core-v1-6-0-metadata.yml
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install validation dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install pyyaml
+
+      - name: Verify exact source state
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import subprocess
+          from pathlib import Path
+
+
+          expected_hashes = {
+              "README.md": "9bf5b34295dea29ff63ea0168dd9fd1954ed889419687d94b272cabfe73e8a08",
+              "CITATION.cff": "009f1e9396295eec7855c36a2256d9c53eeffca466c89e5cb0da5696dd25147b",
+          }
+
+          workflow_path = Path(
+              ".github/workflows/synchronize-eds-core-v1-6-0-metadata.yml"
+          )
+
+          if not workflow_path.is_file():
+              raise SystemExit(f"Missing workflow file: {workflow_path}")
+
+          status = subprocess.run(
+              ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout
+
+          if status:
+              raise SystemExit(
+                  "Checkout is not clean before application:\n" + status
+              )
+
+          for relative_path, expected_hash in expected_hashes.items():
+              path = Path(relative_path)
+
+              if not path.is_file():
+                  raise SystemExit(f"Missing source file: {relative_path}")
+
+              actual_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+              if actual_hash != expected_hash:
+                  raise SystemExit(
+                      f"Source-state mismatch for {relative_path}: "
+                      f"expected {expected_hash}, got {actual_hash}"
+                  )
+
+          workflow_files = sorted(
+              path.as_posix()
+              for path in Path(".github/workflows").glob("*")
+              if path.is_file()
+          )
+
+          if workflow_files != [workflow_path.as_posix()]:
+              raise SystemExit(
+                  "Unexpected workflow boundary before synchronization:\n"
+                  + "\n".join(workflow_files)
+              )
+
+          print("Exact source state PASS: 2 files and 1 workflow.")
+          PY
+
+      - name: Verify anchors and apply metadata synchronization atomically
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from __future__ import annotations
+
+          import os
+          import tempfile
+          from pathlib import Path
+
+
+          replacements = {
+              Path("README.md"): (
+                  "CORE v1.4-draft",
+                  "CORE v1.6.0",
+              ),
+              Path("CITATION.cff"): (
+                  'version: "1.0.2"',
+                  'version: "1.6.0"',
+              ),
+          }
+
+          pending: dict[Path, str] = {}
+
+          for path, (old, new) in replacements.items():
+              text = path.read_text(encoding="utf-8")
+              count = text.count(old)
+
+              if count != 1:
+                  raise SystemExit(
+                      f"{path}: expected exactly 1 source anchor "
+                      f"{old!r}, found {count}"
+                  )
+
+              if new in text:
+                  raise SystemExit(
+                      f"{path}: target marker already exists: {new!r}"
+                  )
+
+              pending[path] = text.replace(old, new)
+
+          temporary_paths: list[tuple[Path, Path]] = []
+
+          try:
+              for target, content in pending.items():
+                  descriptor, temporary_name = tempfile.mkstemp(
+                      prefix=f".{target.name}.",
+                      suffix=".tmp",
+                      dir=target.parent,
+                      text=True,
+                  )
+                  temporary = Path(temporary_name)
+
+                  with os.fdopen(
+                      descriptor,
+                      "w",
+                      encoding="utf-8",
+                      newline="",
+                  ) as handle:
+                      handle.write(content)
+                      handle.flush()
+                      os.fsync(handle.fileno())
+
+                  temporary_paths.append((temporary, target))
+
+              for temporary, target in temporary_paths:
+                  os.replace(temporary, target)
+
+          finally:
+              for temporary, _ in temporary_paths:
+                  temporary.unlink(missing_ok=True)
+
+          print("Applied metadata synchronization to 2 files.")
+          PY
+
+      - name: Verify exact target state and repository metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import re
+          from pathlib import Path
+          from urllib.parse import unquote
+
+          import yaml
+
+
+          expected_hashes = {
+              "README.md": "b9bcc8b131820aba1323635e439485300acf971bd8e8e7ede3bc6e8437329491",
+              "CITATION.cff": "3eef5de8ea665889b1e2bc6e8f5eb6e644d230be92a2e9cefbb5cdb366e18e72",
+          }
+
+          for relative_path, expected_hash in expected_hashes.items():
+              path = Path(relative_path)
+              actual_hash = hashlib.sha256(path.read_bytes()).hexdigest()
+
+              if actual_hash != expected_hash:
+                  raise SystemExit(
+                      f"Target-state mismatch for {relative_path}: "
+                      f"expected {expected_hash}, got {actual_hash}"
+                  )
+
+          readme = Path("README.md").read_text(encoding="utf-8")
+
+          if readme.count("CORE v1.6.0") != 1:
+              raise SystemExit(
+                  "README.md must contain exactly one CORE v1.6.0 marker."
+              )
+
+          if "CORE v1.4-draft" in readme:
+              raise SystemExit("Obsolete README status remains.")
+
+          status_match = re.search(
+              r"^## Status\s*\n+([^\n]+)",
+              readme,
+              flags=re.MULTILINE,
+          )
+
+          if (
+              status_match is None
+              or status_match.group(1).strip() != "CORE v1.6.0"
+          ):
+              raise SystemExit(
+                  "README status section is not exactly CORE v1.6.0."
+              )
+
+          with Path("CITATION.cff").open("r", encoding="utf-8") as handle:
+              citation = yaml.safe_load(handle)
+
+          if citation.get("cff-version") != "1.2.0":
+              raise SystemExit("Unexpected CFF specification version.")
+
+          if citation.get("version") != "1.6.0":
+              raise SystemExit("CITATION.cff version is not 1.6.0.")
+
+          if citation.get("title") != "Endogenous Dynamic Stability":
+              raise SystemExit("Unexpected CITATION.cff title.")
+
+          authors = citation.get("authors")
+
+          if not isinstance(authors, list) or len(authors) != 1:
+              raise SystemExit("Unexpected CITATION.cff author structure.")
+
+          author = authors[0]
+
+          if (
+              author.get("family-names") != "Marnov"
+              or author.get("given-names") != "Maksym"
+              or author.get("orcid")
+              != "https://orcid.org/0009-0000-0832-9597"
+          ):
+              raise SystemExit("CITATION.cff author metadata changed.")
+
+          yaml_files = sorted(
+              set(Path(".").rglob("*.yml"))
+              | set(Path(".").rglob("*.yaml"))
+              | set(Path(".").rglob("*.cff"))
+          )
+
+          for path in yaml_files:
+              with path.open("r", encoding="utf-8") as handle:
+                  yaml.safe_load(handle)
+
+          link_pattern = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+          violations: list[str] = []
+          checked_links = 0
+
+          for document in sorted(Path(".").rglob("*.md")):
+              text = document.read_text(encoding="utf-8")
+
+              for match in link_pattern.finditer(text):
+                  raw = match.group(1).strip()
+
+                  if raw.startswith("<") and raw.endswith(">"):
+                      raw = raw[1:-1]
+
+                  destination = raw.split()[0]
+
+                  if not destination or destination.startswith(
+                      ("#", "http://", "https://", "mailto:", "data:")
+                  ):
+                      continue
+
+                  destination = unquote(destination.split("#", 1)[0])
+
+                  if not destination:
+                      continue
+
+                  checked_links += 1
+                  target = (document.parent / destination).resolve()
+
+                  if not target.exists():
+                      line = text.count("\n", 0, match.start()) + 1
+                      violations.append(
+                          f"{document}:{line} -> {destination}"
+                      )
+
+          if violations:
+              raise SystemExit(
+                  "Broken internal Markdown links:\n"
+                  + "\n".join(violations)
+              )
+
+          archives = [
+              path
+              for path in Path(".").rglob("*")
+              if path.is_file()
+              and ".git" not in path.parts
+              and path.name.lower().endswith(
+                  (
+                      ".zip",
+                      ".tar",
+                      ".tar.gz",
+                      ".tgz",
+                      ".tar.bz2",
+                      ".tbz2",
+                      ".tar.xz",
+                      ".txz",
+                  )
+              )
+          ]
+
+          if archives:
+              raise SystemExit(
+                  "Unexpected active archives:\n"
+                  + "\n".join(str(path) for path in archives)
+              )
+
+          print(
+              "Target-state PASS: 2 hashes, CFF/YAML metadata, "
+              f"{checked_links} internal links, 0 archives."
+          )
+          PY
+
+      - name: Remove one-time workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "${WORKFLOW_PATH}"
+          rm -- "${WORKFLOW_PATH}"
+          test ! -e "${WORKFLOW_PATH}"
+
+      - name: Verify exact changed-file boundary and diff integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          from __future__ import annotations
+
+          import subprocess
+
+
+          expected = {
+              ".github/workflows/synchronize-eds-core-v1-6-0-metadata.yml": " D",
+              "CITATION.cff": " M",
+              "README.md": " M",
+          }
+
+          output = subprocess.run(
+              [
+                  "git",
+                  "status",
+                  "--porcelain=v1",
+                  "--untracked-files=all",
+              ],
+              check=True,
+              capture_output=True,
+              text=True,
+          ).stdout.splitlines()
+
+          actual: dict[str, str] = {}
+
+          for line in output:
+              status = line[:2]
+              path = line[3:]
+
+              if " -> " in path:
+                  raise SystemExit(
+                      f"Unexpected rename in changed-file boundary: {line}"
+                  )
+
+              actual[path] = status
+
+          if actual != expected:
+              raise SystemExit(
+                  "Changed-file boundary mismatch.\n"
+                  f"Expected: {expected}\n"
+                  f"Actual:   {actual}"
+              )
+
+          print("Exact changed-file boundary PASS: 3 paths.")
+          PY
+
+          git diff --check
+          git diff --stat
+
+      - name: Commit and push metadata synchronization
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add -A -- \
+            "${WORKFLOW_PATH}" \
+            README.md \
+            CITATION.cff
+
+          git diff --cached --check
+
+          git commit \
+            -m "Synchronize EDS Core v1.6.0 metadata" \
+            -m "Update the current README status from CORE v1.4-draft to CORE v1.6.0 and synchronize CITATION.cff from version 1.0.2 to 1.6.0. Preserve the theorem, author, ORCID, historical documents, and all scientific content; validate exact source and target hashes, CFF/YAML structure, internal links, the three-path changed-file boundary, and remove this one-time workflow."
+
+          git push origin "HEAD:${GITHUB_REF_NAME}"
